@@ -7,6 +7,8 @@
 	const colgroup = document.getElementById('colgroup')
 	const printArea = document.getElementById('printArea')
 	const dateCell = document.getElementById('dateCell')
+	const typeCell = document.getElementById('typeCell')
+	const typeRow = document.getElementById('typeRow')
 
 	// ---- helpers ----
 	const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
@@ -22,6 +24,14 @@
 
 	function roundToInt(n) {
 		return Math.round(n)
+	}
+
+	// Скрывать "Тип дегустації" на печати, если пусто
+	function updateTypeRowVisibilityForPrint() {
+		if (!typeCell || !typeRow) return
+		const isEmpty = !typeCell.textContent || !typeCell.textContent.trim()
+		if (isEmpty) typeRow.classList.add('hide-on-print')
+		else typeRow.classList.remove('hide-on-print')
 	}
 
 	function buildInitial() {
@@ -205,7 +215,6 @@
 
 		// footer sums per person + total under summary
 		const footerCells = [...footerRow.children].slice(1) // after label
-		// footerCells: [sumPerson0..sumPersonN-1, grandTotalCell]
 		for (let i = 0; i < peopleCount; i++) {
 			footerCells[i].textContent = String(Math.round(colSums[i] * 10) / 10)
 		}
@@ -248,26 +257,20 @@
 	}
 
 	function addCol() {
-		// add a taster column before summary
-		// colgroup: insert before last (summary col)
 		const newCol = document.createElement('col')
 		newCol.className = 'col-person'
 		colgroup.insertBefore(newCol, colgroup.lastElementChild)
 
-		// header: insert before last th (Підсумок)
 		const th = document.createElement('th')
 		th.className = 'editable'
 		th.contentEditable = 'true'
 		th.textContent = 'Новий'
 		headerRow.insertBefore(th, headerRow.lastElementChild)
-
-		// body: insert score cell before summary td
 		;[...tbody.querySelectorAll('tr')].forEach(tr => {
 			const summaryTd = tr.querySelector('td[data-kind="rowAvg"]')
 			tr.insertBefore(makeScoreCell(''), summaryTd)
 		})
 
-		// footer: insert sum before last (grandTotal cell)
 		const tdSum = document.createElement('td')
 		tdSum.textContent = '0'
 		tdSum.dataset.kind = 'colSum'
@@ -280,19 +283,13 @@
 		const peopleCount = getPeopleCount()
 		if (peopleCount <= 1) return
 
-		// colgroup: remove penultimate (last is summary col)
 		colgroup.removeChild(colgroup.children[colgroup.children.length - 2])
-
-		// header: remove penultimate th
 		headerRow.removeChild(headerRow.children[headerRow.children.length - 2])
-
-		// body: remove penultimate score cell in each row
 		;[...tbody.querySelectorAll('tr')].forEach(tr => {
-			const idxToRemove = tr.children.length - 2 // before summary
+			const idxToRemove = tr.children.length - 2
 			tr.removeChild(tr.children[idxToRemove])
 		})
 
-		// footer: remove penultimate td (before grandTotal)
 		footerRow.removeChild(footerRow.children[footerRow.children.length - 2])
 
 		recalcAll()
@@ -317,13 +314,21 @@
 			rows.push({ pos, scores })
 		})
 
-		return { date: dateCell.textContent, people, rows }
+		return {
+			date: dateCell.textContent,
+			tastingType: typeCell ? typeCell.textContent : '',
+			people,
+			rows
+		}
 	}
 
 	function applyData(data) {
 		if (!data || !Array.isArray(data.people) || !Array.isArray(data.rows)) return
 
 		dateCell.textContent = data.date ?? ''
+
+		// ✅ ВАЖНО: восстанавливаем тип дегустации
+		if (typeCell) typeCell.textContent = data.tastingType ?? ''
 
 		setPeople(data.people)
 		setRows(data.rows.length || 1)
@@ -362,7 +367,9 @@
 	function fitToA4ForPrint() {
 		printArea.style.transform = 'scale(1)'
 
-		// px approximation for A4 landscape with margins (8mm each side)
+		// 👇 прячем "Тип дегустації" на печати, если пустой
+		updateTypeRowVisibilityForPrint()
+
 		const pageWidthPx = (297 - 16) * 3.78
 		const pageHeightPx = (210 - 16) * 3.78
 
@@ -377,6 +384,8 @@
 	window.addEventListener('beforeprint', fitToA4ForPrint)
 	window.addEventListener('afterprint', () => {
 		printArea.style.transform = 'scale(1)'
+		// после печати снова показываем строку на экране
+		if (typeRow) typeRow.classList.remove('hide-on-print')
 	})
 
 	// ---- events ----
@@ -393,7 +402,11 @@
 	tbody.addEventListener('input', recalcAll)
 	headerRow.addEventListener('input', recalcAll)
 
+	// следим за типом дегустации (чтобы на печати скрывалось корректно)
+	if (typeCell) typeCell.addEventListener('input', updateTypeRowVisibilityForPrint)
+
 	// init
 	buildInitial()
 	load()
+	updateTypeRowVisibilityForPrint()
 })()

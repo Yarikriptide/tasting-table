@@ -193,6 +193,53 @@ td.score.excellent-score {
 	font-weight: 700;
 }
 
+/* ===== Meta (Дата + Тип дегустації) ===== */
+.title-row {
+	grid-template-columns: 1fr;
+	/* теперь внутри meta-row */
+}
+
+.meta-row {
+	display: flex;
+	gap: 18px;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.meta-item {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.date-cell,
+.type-cell {
+	border: 1px solid #000;
+	padding: 6px 8px;
+	min-height: 20px;
+	background: #fff;
+}
+
+/* уменьшаем поле даты до "разумного" */
+.date-cell {
+	width: 140px;
+	/* было огромным, теперь как под дату */
+	max-width: 160px;
+}
+
+/* поле типа дегустации — чуть шире */
+.type-cell {
+	width: 220px;
+	max-width: 320px;
+}
+
+/* на печати скрываем строку типа, если пустая */
+@media print {
+	.hide-on-print {
+		display: none !important;
+	}
+}
+
 /* ================= Print ================= */
 @media print {
 	.toolbar {
