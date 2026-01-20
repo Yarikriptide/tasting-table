@@ -1,0 +1,218 @@
+:root {
+	--border: #000;
+	--grid: 1px solid #000;
+	--header-bg: #d9d9d9;
+	--footer-bg: #c6d9f1;
+	--ui-bg: #f7f7f7;
+	--focus: #4a90e2;
+}
+
+body {
+	margin: 0;
+	font-family: Arial, Helvetica, sans-serif;
+	color: #000;
+}
+
+/* ================= UI ================= */
+.toolbar {
+	position: sticky;
+	top: 0;
+	z-index: 5;
+	background: var(--ui-bg);
+	border-bottom: 1px solid #ccc;
+	padding: 10px 12px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.toolbar .group {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.toolbar button {
+	border: 1px solid #aaa;
+	background: #fff;
+	padding: 6px 10px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 13px;
+}
+
+.toolbar button:hover {
+	background: #f0f0f0;
+}
+
+.toolbar .hint {
+	font-size: 12px;
+	opacity: .8;
+}
+
+/* ================= Sheet ================= */
+.sheet {
+	padding: 12px;
+}
+
+.title-row {
+	display: grid;
+	grid-template-columns: 140px 1fr;
+	gap: 10px;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.title {
+	grid-column: 1 / -1;
+	text-align: center;
+	font-weight: 700;
+	font-size: 18px;
+	letter-spacing: .3px;
+	margin: 4px 0;
+}
+
+.date-label {
+	font-weight: 700;
+}
+
+.date-cell {
+	border: 1px solid #000;
+	padding: 6px 8px;
+	min-height: 20px;
+	background: #fff;
+}
+
+.editable {
+	outline: none;
+}
+
+/* ================= Table ================= */
+.print-area {
+	transform-origin: top left;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+	table-layout: fixed;
+	border: 2px solid #000;
+}
+
+/* ---------- Cells ---------- */
+th,
+td {
+	border: 1px solid #000;
+	padding: 4px 6px;
+	vertical-align: middle;
+	font-size: 12.5px;
+	line-height: 1.2;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+	background: #fff;
+}
+
+/* ---------- Header ---------- */
+thead th {
+	background: var(--header-bg);
+	font-weight: 700;
+	text-align: center;
+	border: 1.5px solid #000;
+}
+
+/* ---------- Footer ---------- */
+tfoot td {
+	background: var(--footer-bg);
+	font-weight: 700;
+	text-align: center;
+	border-top: 2px solid #000;
+}
+
+tfoot td.footer-label {
+	text-align: left;
+}
+
+/* ---------- Columns ---------- */
+col.col-num {
+	width: 44px;
+	background: #f2f2f2;
+}
+
+col.col-pos {
+	width: 360px;
+}
+
+col.col-person {
+	width: 72px;
+}
+
+col.col-summary {
+	width: 90px;
+}
+
+/* ---------- Alignment ---------- */
+td.num,
+th.num,
+td.score,
+td.summary {
+	text-align: center;
+}
+
+/* ---------- Row height ---------- */
+tbody tr td {
+	height: 28px;
+}
+
+/* ---------- Editable cells ---------- */
+td[contenteditable="true"]:focus,
+.date-cell[contenteditable="true"]:focus {
+	outline: 2px solid var(--focus);
+	outline-offset: -2px;
+	background: #eef5ff;
+}
+
+/* визуально пустые ячейки */
+td[contenteditable="true"]:empty::after {
+	content: "";
+	display: inline-block;
+	min-height: 1em;
+}
+
+/* ===== Highlight good scores (8–10) ===== */
+td.score.good-score {
+	background: #dff0d8;
+	/* мягкий зелёный */
+	font-weight: 700;
+}
+
+td.score.excellent-score {
+	background: #b7e1cd;
+	/* чуть насыщеннее для 9.5–10 */
+	font-weight: 700;
+}
+
+/* ================= Print ================= */
+@media print {
+	.toolbar {
+		display: none !important;
+	}
+
+	body {
+		margin: 0;
+	}
+
+	.sheet {
+		padding: 0;
+	}
+
+	@page {
+		size: A4 landscape;
+		margin: 8mm;
+	}
+
+	.date-cell {
+		border: 1px solid #000;
+	}
+}

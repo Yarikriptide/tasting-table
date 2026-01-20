@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="uk">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Внутрішня дегустація</title>
+	<link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+	<div class="toolbar">
+		<div class="group">
+			<button id="addRow">+ рядок</button>
+			<button id="delRow">- рядок</button>
+		</div>
+		<div class="group">
+			<button id="addCol">+ дегустатор</button>
+			<button id="delCol">- дегустатор</button>
+		</div>
+		<div class="group">
+			<button id="save">💾 зберегти</button>
+			<button id="load">↩ завантажити</button>
+			<button id="reset">🧹 очистити</button>
+			<span class="hint">Ctrl+P → друк (A4, альбом) ✅</span>
+		</div>
+	</div>
+
+	<div class="sheet">
+		<div class="title-row">
+			<div class="date-label">Дата:</div>
+			<div id="dateCell" class="date-cell editable" contenteditable="true"> </div>
+			<div class="title">ВНУТРІШНЯ ДЕГУСТАЦІЯ</div>
+		</div>
+
+		<div id="printArea" class="print-area">
+			<table id="tastingTable" aria-label="Таблиця дегустації">
+				<colgroup id="colgroup">
+					<col class="col-num" />
+					<col class="col-pos" />
+					<!-- person cols injected by JS -->
+					<!-- summary col injected by JS -->
+				</colgroup>
+
+				<thead>
+					<tr id="headerRow">
+						<th class="num">№</th>
+						<th>Позиція</th>
+						<!-- names injected by JS -->
+						<!-- Підсумок injected by JS -->
+					</tr>
+				</thead>
+
+				<tbody id="tbody"></tbody>
+
+				<tfoot>
+					<tr id="footerRow">
+						<td class="footer-label" colspan="2">Сума балів</td>
+						<!-- sums per person injected by JS -->
+						<!-- total under summary injected by JS -->
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+	</div>
+
+	<script src="app.js" defer></script>
+</body>
+
+</html>
