@@ -36,7 +36,7 @@
 		const mm = String(d.getMonth() + 1).padStart(2, '0')
 		const yyyy = d.getFullYear()
 
-		dateCell.textContent = `${dd}.${mm}.${yyyy}`
+		dateCell.innerHTML = `${dd}.${mm}.${yyyy}`
 	}
 
 	// Скрывать "Тип дегустації" на печати, если пусто
@@ -314,23 +314,23 @@
 		const peopleCount = getPeopleCount()
 
 		for (let i = 0; i < peopleCount; i++) {
-			people.push(headerRow.children[2 + i].textContent.trim())
+			people.push((headerRow.children[2 + i].innerHTML || '').trim())
 		}
 
 		const rows = []
 		;[...tbody.querySelectorAll('tr')].forEach(tr => {
-			const pos = tr.children[1].textContent
-			const scores = []
+			const posHtml = tr.children[1].innerHTML
+			const scoresHtml = []
 			for (let i = 0; i < peopleCount; i++) {
-				scores.push(tr.children[2 + i].textContent)
+				scoresHtml.push(tr.children[2 + i].innerHTML)
 			}
-			rows.push({ pos, scores })
+			rows.push({ posHtml, scoresHtml })
 		})
 
 		return {
-			date: dateCell.textContent,
-			tastingType: typeCell ? typeCell.textContent : '',
-			people,
+			dateHtml: dateCell.innerHTML,
+			tastingTypeHtml: typeCell ? typeCell.innerHTML : '',
+			peopleHtml: people,
 			rows
 		}
 	}
@@ -338,18 +338,25 @@
 	function applyData(data) {
 		if (!data || !Array.isArray(data.people) || !Array.isArray(data.rows)) return
 
-		dateCell.textContent = data.date ?? ''
-		if (typeCell) typeCell.textContent = data.tastingType ?? ''
+		dateCell.innerHTML = data.dateHtml ?? ''
+		if (typeCell) typeCell.innerHTML = data.tastingTypeHtml ?? ''
 
-		setPeople(data.people)
+		setPeople(data.peopleHtml || data.people || [])
+		const peopleCount2 = getPeopleCount()
+		for (let i = 0; i < peopleCount2; i++) {
+			const th = headerRow.children[2 + i]
+			const html = (data.peopleHtml || data.people || [])[i] ?? ''
+			th.innerHTML = html
+		}
+
 		setRows(data.rows.length || 1)
 
 		const peopleCount = getPeopleCount()
 		;[...tbody.querySelectorAll('tr')].forEach((tr, r) => {
 			const row = data.rows[r]
-			tr.children[1].textContent = row?.pos ?? ''
+			tr.children[1].innerHTML = row?.posHtml ?? ''
 			for (let i = 0; i < peopleCount; i++) {
-				tr.children[2 + i].textContent = row?.scores?.[i] ?? ''
+				tr.children[2 + i].innerHTML = row?.scoresHtml?.[i] ?? ''
 			}
 		})
 
@@ -536,23 +543,34 @@
 
 	function changeFontSize(deltaPx) {
 		restoreSelection()
+
 		const sel = window.getSelection()
-		if (!sel || sel.rangeCount === 0) return
+		const hasSelection = sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed
 
-		const range = sel.getRangeAt(0)
-		if (range.collapsed) return
+		// 1) Если есть выделенный текст — меняем размер выделения (как раньше)
+		if (hasSelection) {
+			let base = 12
+			const node = sel.anchorNode
+			const el = node && node.nodeType === 3 ? node.parentElement : node
+			if (el && el.nodeType === 1) {
+				const cs = window.getComputedStyle(el)
+				const px = parseFloat(cs.fontSize)
+				if (Number.isFinite(px)) base = px
+			}
 
-		let base = 12
-		const node = sel.anchorNode
-		const el = node && node.nodeType === 3 ? node.parentElement : node
-		if (el && el.nodeType === 1) {
-			const cs = window.getComputedStyle(el)
-			const px = parseFloat(cs.fontSize)
-			if (Number.isFinite(px)) base = px
+			const next = Math.max(9, Math.min(24, base + deltaPx))
+			applySpanStyleToSelection({ fontSize: `${next}px` })
+			return
 		}
 
-		const next = Math.max(9, Math.min(20, base + deltaPx))
-		applySpanStyleToSelection({ fontSize: `${next}px` })
+		// 2) Если выделения нет — меняем размер ТЕКУЩЕЙ ячейки (это удобнее)
+		const cell = lastEditable
+		if (!cell) return
+
+		const cs = window.getComputedStyle(cell)
+		const current = parseFloat(cs.fontSize) || 12
+		const next = Math.max(9, Math.min(24, current + deltaPx))
+		cell.style.fontSize = `${next}px`
 	}
 
 	function execCmd(cmd) {
