@@ -26,6 +26,19 @@
 		return Math.round(n)
 	}
 
+	function ensureDateFilled() {
+		if (!dateCell) return
+		const current = (dateCell.textContent || '').trim()
+		if (current) return
+
+		const d = new Date()
+		const dd = String(d.getDate()).padStart(2, '0')
+		const mm = String(d.getMonth() + 1).padStart(2, '0')
+		const yyyy = d.getFullYear()
+
+		dateCell.textContent = `${dd}.${mm}.${yyyy}`
+	}
+
 	// Скрывать "Тип дегустації" на печати, если пусто
 	function updateTypeRowVisibilityForPrint() {
 		if (!typeCell || !typeRow) return
@@ -347,6 +360,8 @@
 
 	function exportJson() {
 		try {
+			ensureDateFilled() // ✅ добавили
+
 			const payload = serialize()
 			const json = JSON.stringify(payload, null, 2)
 
@@ -370,7 +385,6 @@
 			a.click()
 			a.remove()
 
-			// важно: не отзывать URL мгновенно — иначе в некоторых браузерах скачивание может не стартануть
 			setTimeout(() => URL.revokeObjectURL(url), 1500)
 		} catch (e) {
 			alert('Помилка експорту ❌')
