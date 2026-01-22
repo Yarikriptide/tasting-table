@@ -478,6 +478,21 @@
 		if (isEditableTarget(el)) lastRange = range.cloneRange()
 	})
 
+	function rememberSelection() {
+		const sel = window.getSelection()
+		if (!sel || sel.rangeCount === 0) return
+
+		const range = sel.getRangeAt(0)
+		const anchor = sel.anchorNode
+		const el = anchor && anchor.nodeType === 3 ? anchor.parentElement : anchor
+
+		if (isEditableTarget(el)) lastRange = range.cloneRange()
+	}
+
+	// дополнительно фиксируем выделение после выделения мышкой/клавой
+	printArea.addEventListener('mouseup', rememberSelection)
+	printArea.addEventListener('keyup', rememberSelection)
+
 	document.addEventListener('focusin', e => {
 		if (!isEditableTarget(e.target)) return
 		lastEditable = e.target.closest('td.editable, th.editable, #dateCell, #typeCell')
