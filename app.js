@@ -1,5 +1,5 @@
 ;(() => {
-	const STORAGE_KEY = 'tasting_table_v2'
+	const STORAGE_KEY = 'tasting_table_v2' // сейчас не используется, оставил чтобы не путало, можно удалить
 
 	const tbody = document.getElementById('tbody')
 	const headerRow = document.getElementById('headerRow')
@@ -308,7 +308,7 @@
 		recalcAll()
 	}
 
-	// ---- save/load ----
+	// ---- export/import ----
 	function serialize() {
 		const people = []
 		const peopleCount = getPeopleCount()
@@ -339,8 +339,6 @@
 		if (!data || !Array.isArray(data.people) || !Array.isArray(data.rows)) return
 
 		dateCell.textContent = data.date ?? ''
-
-		// ✅ ВАЖНО: восстанавливаем тип дегустации
 		if (typeCell) typeCell.textContent = data.tastingType ?? ''
 
 		setPeople(data.people)
@@ -356,16 +354,16 @@
 		})
 
 		recalcAll()
+		updateTypeRowVisibilityForPrint()
 	}
 
 	function exportJson() {
 		try {
-			ensureDateFilled() // ✅ добавили
+			ensureDateFilled()
 
 			const payload = serialize()
 			const json = JSON.stringify(payload, null, 2)
 
-			// имя файла: degustation_YYYY-MM-DD.json (если дата есть)
 			const rawDate = (dateCell?.textContent || '').trim()
 			const safeDate =
 				rawDate
@@ -393,7 +391,6 @@
 	}
 
 	function importJson() {
-		// создаём скрытый input для выбора файла
 		const input = document.createElement('input')
 		input.type = 'file'
 		input.accept = 'application/json,.json'
@@ -407,11 +404,6 @@
 				try {
 					const data = JSON.parse(String(reader.result || ''))
 					applyData(data)
-
-					// на всякий: обновим скрытие типа дегустации перед печатью
-					if (typeof updateTypeRowVisibilityForPrint === 'function') {
-						updateTypeRowVisibilityForPrint()
-					}
 				} catch (e) {
 					alert('Файл імпорту некоректний ❌')
 					console.error(e)
@@ -425,13 +417,12 @@
 
 	function reset() {
 		buildInitial()
+		updateTypeRowVisibilityForPrint()
 	}
 
 	// ---- print fit (auto scale to 1 page) ----
 	function fitToA4ForPrint() {
 		printArea.style.transform = 'scale(1)'
-
-		// 👇 прячем "Тип дегустації" на печати, если пустой
 		updateTypeRowVisibilityForPrint()
 
 		const pageWidthPx = (297 - 16) * 3.78
@@ -448,7 +439,6 @@
 	window.addEventListener('beforeprint', fitToA4ForPrint)
 	window.addEventListener('afterprint', () => {
 		printArea.style.transform = 'scale(1)'
-		// после печати снова показываем строку на экране
 		if (typeRow) typeRow.classList.remove('hide-on-print')
 	})
 
@@ -466,40 +456,105 @@
 	tbody.addEventListener('input', recalcAll)
 	headerRow.addEventListener('input', recalcAll)
 
-	// следим за типом дегустации (чтобы на печати скрывалось корректно)
 	if (typeCell) typeCell.addEventListener('input', updateTypeRowVisibilityForPrint)
 
-	// ===== Simple Word-like formatting =====
-	function changeFontSize(delta) {
+	// ===== Word-like formatting (keeps selection when clicking buttons) =====
+	let lastRange = null
+	let lastEditable = null
+
+	function isEditableTarget(el) {
+		if (!el || !el.closest) return false
+		return !!el.closest('td.editable, th.editable, #dateCell, #typeCell')
+	}
+
+	document.addEventListener('selectionchange', () => {
 		const sel = window.getSelection()
 		if (!sel || sel.rangeCount === 0) return
 
 		const range = sel.getRangeAt(0)
-		if (!range || range.collapsed) return
+		const anchor = sel.anchorNode
+		const el = anchor && anchor.nodeType === 3 ? anchor.parentElement : anchor
 
-		const span = document.createElement('span')
-		const parent = range.commonAncestorContainer.parentElement
+		if (isEditableTarget(el)) lastRange = range.cloneRange()
+	})
 
-		let currentSize = 12
-		if (parent && parent.style && parent.style.fontSize) {
-			currentSize = parseFloat(parent.style.fontSize)
-		}
+	document.addEventListener('focusin', e => {
+		if (!isEditableTarget(e.target)) return
+		lastEditable = e.target.closest('td.editable, th.editable, #dateCell, #typeCell')
+	})
 
-		const newSize = Math.min(20, Math.max(9, currentSize + delta))
-		span.style.fontSize = newSize + 'px'
-
-		range.surroundContents(span)
+	function restoreSelection() {
+		if (!lastRange) return false
+		const sel = window.getSelection()
+		if (!sel) return false
 		sel.removeAllRanges()
+		sel.addRange(lastRange)
+		return true
 	}
 
-	// кнопки форматирования
+	function applySpanStyleToSelection(styleObj) {
+		const sel = window.getSelection()
+		if (!sel || sel.rangeCount === 0) return
+		const range = sel.getRangeAt(0)
+		if (range.collapsed) return
+
+		const span = document.createElement('span')
+		Object.assign(span.style, styleObj)
+
+		try {
+			range.surroundContents(span)
+		} catch {
+			// сложные выделения (часть узлов) — делаем безопасно
+			const frag = range.extractContents()
+			span.appendChild(frag)
+			range.insertNode(span)
+		}
+
+		// курсор после span
+		sel.removeAllRanges()
+		const newRange = document.createRange()
+		newRange.selectNodeContents(span)
+		newRange.collapse(false)
+		sel.addRange(newRange)
+		lastRange = newRange.cloneRange()
+	}
+
+	function changeFontSize(deltaPx) {
+		restoreSelection()
+		const sel = window.getSelection()
+		if (!sel || sel.rangeCount === 0) return
+
+		const range = sel.getRangeAt(0)
+		if (range.collapsed) return
+
+		let base = 12
+		const node = sel.anchorNode
+		const el = node && node.nodeType === 3 ? node.parentElement : node
+		if (el && el.nodeType === 1) {
+			const cs = window.getComputedStyle(el)
+			const px = parseFloat(cs.fontSize)
+			if (Number.isFinite(px)) base = px
+		}
+
+		const next = Math.max(9, Math.min(20, base + deltaPx))
+		applySpanStyleToSelection({ fontSize: `${next}px` })
+	}
+
+	function execCmd(cmd) {
+		restoreSelection()
+		if (lastEditable && lastEditable.focus) lastEditable.focus()
+		document.execCommand(cmd)
+	}
+
+	// ВАЖНО: mousedown + preventDefault, чтобы клик по кнопке не сбивал выделение
 	document.querySelectorAll('.format-toolbar button').forEach(btn => {
-		btn.addEventListener('click', () => {
+		btn.addEventListener('mousedown', e => {
+			e.preventDefault()
 			const cmd = btn.dataset.cmd
 
-			if (cmd === 'bold') document.execCommand('bold')
-			else if (cmd === 'italic') document.execCommand('italic')
-			else if (cmd === 'underline') document.execCommand('underline')
+			if (cmd === 'bold') execCmd('bold')
+			else if (cmd === 'italic') execCmd('italic')
+			else if (cmd === 'underline') execCmd('underline')
 			else if (cmd === 'font-inc') changeFontSize(1)
 			else if (cmd === 'font-dec') changeFontSize(-1)
 		})
@@ -509,4 +564,3 @@
 	buildInitial()
 	updateTypeRowVisibilityForPrint()
 })()
-ЫЫ
