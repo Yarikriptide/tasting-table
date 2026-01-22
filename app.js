@@ -455,7 +455,44 @@
 	// следим за типом дегустации (чтобы на печати скрывалось корректно)
 	if (typeCell) typeCell.addEventListener('input', updateTypeRowVisibilityForPrint)
 
+	// ===== Simple Word-like formatting =====
+	function changeFontSize(delta) {
+		const sel = window.getSelection()
+		if (!sel || sel.rangeCount === 0) return
+
+		const range = sel.getRangeAt(0)
+		if (!range || range.collapsed) return
+
+		const span = document.createElement('span')
+		const parent = range.commonAncestorContainer.parentElement
+
+		let currentSize = 12
+		if (parent && parent.style && parent.style.fontSize) {
+			currentSize = parseFloat(parent.style.fontSize)
+		}
+
+		const newSize = Math.min(20, Math.max(9, currentSize + delta))
+		span.style.fontSize = newSize + 'px'
+
+		range.surroundContents(span)
+		sel.removeAllRanges()
+	}
+
+	// кнопки форматирования
+	document.querySelectorAll('.format-toolbar button').forEach(btn => {
+		btn.addEventListener('click', () => {
+			const cmd = btn.dataset.cmd
+
+			if (cmd === 'bold') document.execCommand('bold')
+			else if (cmd === 'italic') document.execCommand('italic')
+			else if (cmd === 'underline') document.execCommand('underline')
+			else if (cmd === 'font-inc') changeFontSize(1)
+			else if (cmd === 'font-dec') changeFontSize(-1)
+		})
+	})
+
 	// init
 	buildInitial()
 	updateTypeRowVisibilityForPrint()
 })()
+ЫЫ

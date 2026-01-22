@@ -233,6 +233,33 @@ td.score.excellent-score {
 	max-width: 320px;
 }
 
+/* ===== Text formatting toolbar ===== */
+.format-toolbar button {
+	min-width: 32px;
+	font-weight: 700;
+}
+
+.format-toolbar .sep {
+	width: 1px;
+	height: 20px;
+	background: #ccc;
+	margin: 0 6px;
+}
+
+/* Ограничиваем размеры текста для печати */
+td,
+th {
+	font-size: 12.5px;
+}
+
+@media print {
+
+	td,
+	th {
+		font-size: 12px;
+	}
+}
+
 /* на печати скрываем строку типа, если пустая */
 @media print {
 	.hide-on-print {
