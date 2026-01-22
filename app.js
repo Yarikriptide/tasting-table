@@ -350,7 +350,7 @@
 			const payload = serialize()
 			const json = JSON.stringify(payload, null, 2)
 
-			// имя файла: дегустация_YYYY-MM-DD.json (если дата есть)
+			// имя файла: degustation_YYYY-MM-DD.json (если дата есть)
 			const rawDate = (dateCell?.textContent || '').trim()
 			const safeDate =
 				rawDate
@@ -370,7 +370,8 @@
 			a.click()
 			a.remove()
 
-			URL.revokeObjectURL(url)
+			// важно: не отзывать URL мгновенно — иначе в некоторых браузерах скачивание может не стартануть
+			setTimeout(() => URL.revokeObjectURL(url), 1500)
 		} catch (e) {
 			alert('Помилка експорту ❌')
 			console.error(e)
@@ -409,7 +410,6 @@
 	}
 
 	function reset() {
-		localStorage.removeItem(STORAGE_KEY)
 		buildInitial()
 	}
 
