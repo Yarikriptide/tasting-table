@@ -345,17 +345,67 @@
 		recalcAll()
 	}
 
-	function save() {
-		const payload = serialize()
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+	function exportJson() {
+		try {
+			const payload = serialize()
+			const json = JSON.stringify(payload, null, 2)
+
+			// имя файла: дегустация_YYYY-MM-DD.json (если дата есть)
+			const rawDate = (dateCell?.textContent || '').trim()
+			const safeDate =
+				rawDate
+					.replace(/\s+/g, '')
+					.replace(/[^\d.\-]/g, '')
+					.replace(/\./g, '-') || 'no-date'
+
+			const filename = `degustation_${safeDate}.json`
+
+			const blob = new Blob([json], { type: 'application/json;charset=utf-8' })
+			const url = URL.createObjectURL(blob)
+
+			const a = document.createElement('a')
+			a.href = url
+			a.download = filename
+			document.body.appendChild(a)
+			a.click()
+			a.remove()
+
+			URL.revokeObjectURL(url)
+		} catch (e) {
+			alert('Помилка експорту ❌')
+			console.error(e)
+		}
 	}
 
-	function load() {
-		const raw = localStorage.getItem(STORAGE_KEY)
-		if (!raw) return
-		try {
-			applyData(JSON.parse(raw))
-		} catch (e) {}
+	function importJson() {
+		// создаём скрытый input для выбора файла
+		const input = document.createElement('input')
+		input.type = 'file'
+		input.accept = 'application/json,.json'
+
+		input.addEventListener('change', () => {
+			const file = input.files && input.files[0]
+			if (!file) return
+
+			const reader = new FileReader()
+			reader.onload = () => {
+				try {
+					const data = JSON.parse(String(reader.result || ''))
+					applyData(data)
+
+					// на всякий: обновим скрытие типа дегустации перед печатью
+					if (typeof updateTypeRowVisibilityForPrint === 'function') {
+						updateTypeRowVisibilityForPrint()
+					}
+				} catch (e) {
+					alert('Файл імпорту некоректний ❌')
+					console.error(e)
+				}
+			}
+			reader.readAsText(file)
+		})
+
+		input.click()
 	}
 
 	function reset() {
@@ -394,8 +444,8 @@
 	document.getElementById('addCol').addEventListener('click', addCol)
 	document.getElementById('delCol').addEventListener('click', delCol)
 
-	document.getElementById('save').addEventListener('click', save)
-	document.getElementById('load').addEventListener('click', load)
+	document.getElementById('save').addEventListener('click', exportJson)
+	document.getElementById('load').addEventListener('click', importJson)
 	document.getElementById('reset').addEventListener('click', reset)
 
 	// recalc on edits (names/positions)
@@ -407,6 +457,5 @@
 
 	// init
 	buildInitial()
-	load()
 	updateTypeRowVisibilityForPrint()
 })()
