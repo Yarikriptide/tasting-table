@@ -336,16 +336,18 @@
 	}
 
 	function applyData(data) {
-		if (!data || !Array.isArray(data.people) || !Array.isArray(data.rows)) return
+		const peopleArr = data?.peopleHtml || data?.people
+		if (!data || !Array.isArray(peopleArr) || !Array.isArray(data.rows)) return
 
 		dateCell.innerHTML = data.dateHtml ?? ''
 		if (typeCell) typeCell.innerHTML = data.tastingTypeHtml ?? ''
 
-		setPeople(data.peopleHtml || data.people || [])
+		setPeople(peopleArr)
+
 		const peopleCount2 = getPeopleCount()
 		for (let i = 0; i < peopleCount2; i++) {
 			const th = headerRow.children[2 + i]
-			const html = (data.peopleHtml || data.people || [])[i] ?? ''
+			const html = peopleArr[i] ?? ''
 			th.innerHTML = html
 		}
 
