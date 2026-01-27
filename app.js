@@ -9,6 +9,8 @@
 	const dateCell = document.getElementById('dateCell')
 	const typeCell = document.getElementById('typeCell')
 	const typeRow = document.getElementById('typeRow')
+	const subtitleCell = document.getElementById('subtitleCell')
+	const subtitleRow = document.getElementById('subtitleRow')
 	const fontSizeIndicator = document.getElementById('fontSizeIndicator')
 
 	// ---- helpers ----
@@ -41,11 +43,18 @@
 	}
 
 	// Скрывать "Тип дегустації" на печати, если пусто
-	function updateTypeRowVisibilityForPrint() {
-		if (!typeCell || !typeRow) return
-		const isEmpty = !typeCell.textContent || !typeCell.textContent.trim()
-		if (isEmpty) typeRow.classList.add('hide-on-print')
-		else typeRow.classList.remove('hide-on-print')
+	function updateOptionalRowsVisibilityForPrint() {
+		// тип дегустации
+		if (typeCell && typeRow) {
+			const empty = !typeCell.textContent || !typeCell.textContent.trim()
+			typeRow.classList.toggle('hide-on-print', empty)
+		}
+
+		// поле под заголовком
+		if (subtitleCell && subtitleRow) {
+			const empty = !subtitleCell.textContent || !subtitleCell.textContent.trim()
+			subtitleRow.classList.toggle('hide-on-print', empty)
+		}
 	}
 
 	function buildInitial() {
@@ -345,6 +354,7 @@
 		return {
 			dateHtml: dateCell.innerHTML,
 			tastingTypeHtml: typeCell ? typeCell.innerHTML : '',
+			subtitleHtml: subtitleCell ? subtitleCell.innerHTML : '',
 			peopleHtml: people,
 			rows
 		}
@@ -356,6 +366,7 @@
 
 		dateCell.innerHTML = data.dateHtml ?? ''
 		if (typeCell) typeCell.innerHTML = data.tastingTypeHtml ?? ''
+		if (subtitleCell) subtitleCell.innerHTML = data.subtitleHtml ?? ''
 
 		setPeople(peopleArr)
 
@@ -378,7 +389,7 @@
 		})
 
 		recalcAll()
-		updateTypeRowVisibilityForPrint()
+		updateOptionalRowsVisibilityForPrint()
 	}
 
 	function exportJson() {
@@ -441,13 +452,13 @@
 
 	function reset() {
 		buildInitial()
-		updateTypeRowVisibilityForPrint()
+		updateOptionalRowsVisibilityForPrint()
 	}
 
 	// ---- print fit (auto scale to 1 page) ----
 	function fitToA4ForPrint() {
 		printArea.style.transform = 'scale(1)'
-		updateTypeRowVisibilityForPrint()
+		updateOptionalRowsVisibilityForPrint()
 
 		const pageWidthPx = (297 - 16) * 3.78
 		const pageHeightPx = (210 - 16) * 3.78
@@ -480,7 +491,8 @@
 	tbody.addEventListener('input', recalcAll)
 	headerRow.addEventListener('input', recalcAll)
 
-	if (typeCell) typeCell.addEventListener('input', updateTypeRowVisibilityForPrint)
+	if (typeCell) typeCell.addEventListener('input', updateOptionalRowsVisibilityForPrint)
+	if (subtitleCell) subtitleCell.addEventListener('input', updateOptionalRowsVisibilityForPrint)
 
 	// ===== Word-like formatting (keeps selection when clicking buttons) =====
 	let lastRange = null
@@ -599,5 +611,5 @@
 
 	// init
 	buildInitial()
-	updateTypeRowVisibilityForPrint()
+	updateOptionalRowsVisibilityForPrint()
 })()
