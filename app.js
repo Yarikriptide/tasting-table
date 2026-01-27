@@ -516,63 +516,19 @@
 		return true
 	}
 
-	function applySpanStyleToSelection(styleObj) {
-		const sel = window.getSelection()
-		if (!sel || sel.rangeCount === 0) return
-		const range = sel.getRangeAt(0)
-		if (range.collapsed) return
-
-		const span = document.createElement('span')
-		Object.assign(span.style, styleObj)
-
-		try {
-			range.surroundContents(span)
-		} catch {
-			// сложные выделения (часть узлов) — делаем безопасно
-			const frag = range.extractContents()
-			span.appendChild(frag)
-			range.insertNode(span)
-		}
-
-		// курсор после span
-		sel.removeAllRanges()
-		const newRange = document.createRange()
-		newRange.selectNodeContents(span)
-		newRange.collapse(false)
-		sel.addRange(newRange)
-		lastRange = newRange.cloneRange()
-	}
-
 	function changeFontSize(deltaPx) {
+		// на всякий восстановим selection, чтобы lastEditable был актуален
 		restoreSelection()
 
-		const sel = window.getSelection()
-		const hasSelection = sel && sel.rangeCount > 0 && !sel.getRangeAt(0).collapsed
-
-		// 1) Если есть выделенный текст — меняем размер выделения (как раньше)
-		if (hasSelection) {
-			let base = 12
-			const node = sel.anchorNode
-			const el = node && node.nodeType === 3 ? node.parentElement : node
-			if (el && el.nodeType === 1) {
-				const cs = window.getComputedStyle(el)
-				const px = parseFloat(cs.fontSize)
-				if (Number.isFinite(px)) base = px
-			}
-
-			const next = Math.max(9, Math.min(24, base + deltaPx))
-			applySpanStyleToSelection({ fontSize: `${next}px` })
-			return
-		}
-
-		// 2) Если выделения нет — меняем размер ТЕКУЩЕЙ ячейки (это удобнее)
 		const cell = lastEditable
 		if (!cell) return
 
 		const cs = window.getComputedStyle(cell)
 		const current = parseFloat(cs.fontSize) || 12
-		const next = Math.max(9, Math.min(24, current + deltaPx))
+		const next = Math.max(9, Math.min(28, current + deltaPx))
+
 		cell.style.fontSize = `${next}px`
+		cell.style.lineHeight = '1.2'
 	}
 
 	function execCmd(cmd) {
