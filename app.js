@@ -9,6 +9,7 @@
 	const dateCell = document.getElementById('dateCell')
 	const typeCell = document.getElementById('typeCell')
 	const typeRow = document.getElementById('typeRow')
+	const fontSizeIndicator = document.getElementById('fontSizeIndicator')
 
 	// ---- helpers ----
 	const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
@@ -129,6 +130,20 @@
 			}
 			tr.appendChild(makeSummaryCell())
 		})
+	}
+
+	function updateFontSizeIndicator() {
+		if (!fontSizeIndicator) return
+
+		const cell = lastEditable
+		if (!cell) {
+			fontSizeIndicator.textContent = '— px'
+			return
+		}
+
+		const cs = window.getComputedStyle(cell)
+		const size = Math.round(parseFloat(cs.fontSize))
+		fontSizeIndicator.textContent = `${size} px`
 	}
 
 	function setRows(count) {
@@ -505,6 +520,7 @@
 	document.addEventListener('focusin', e => {
 		if (!isEditableTarget(e.target)) return
 		lastEditable = e.target.closest('td.editable, th.editable, #dateCell, #typeCell')
+		updateFontSizeIndicator()
 	})
 
 	function restoreSelection() {
@@ -529,6 +545,7 @@
 
 		cell.style.fontSize = `${next}px`
 		cell.style.lineHeight = '1.2'
+		updateFontSizeIndicator()
 	}
 
 	function execCmd(cmd) {
@@ -536,6 +553,35 @@
 		if (lastEditable && lastEditable.focus) lastEditable.focus()
 		document.execCommand(cmd)
 	}
+
+	tbody.addEventListener('keydown', e => {
+		if (e.key !== 'Enter') return
+
+		const cell = e.target.closest('td.editable')
+		if (!cell) return
+
+		e.preventDefault() // чтобы не вставлялся перенос строки
+
+		const row = cell.parentElement
+		const colIndex = cell.cellIndex
+		const nextRow = row.nextElementSibling
+
+		if (!nextRow) return
+
+		const nextCell = nextRow.children[colIndex]
+		if (!nextCell || !nextCell.classList.contains('editable')) return
+
+		nextCell.focus()
+
+		// ставим курсор в конец
+		const range = document.createRange()
+		range.selectNodeContents(nextCell)
+		range.collapse(false)
+
+		const sel = window.getSelection()
+		sel.removeAllRanges()
+		sel.addRange(range)
+	})
 
 	// ВАЖНО: mousedown + preventDefault, чтобы клик по кнопке не сбивал выделение
 	document.querySelectorAll('.format-toolbar button').forEach(btn => {
